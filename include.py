@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
-import fileinput
+from fileinput import FileInput
 import os
 import re
 
@@ -21,27 +21,34 @@ def parse_arguments() -> argparse.Namespace:
     return p.parse_args()
 
 
-def raw_print(line: object):
+def print_raw(line: object):
     print(line, end="")
+
+
+# Even though the fileinput module is meant to handle multiple input sources,
+# it is only being used here for it's easy management of stdin. This method
+# should only ever accept a single file as an argument.
+def process_file(path: str, depth=1):
+    if depth > 10:
+        raise Exception("Depth limit reached!")
+
+    with FileInput(files=path) as input:
+        parent_dir = os.path.dirname(path)
+        for line in input:
+            match = regex.match(line)
+            if not match:
+                print_raw(line)
+                continue
+
+            include_path = match.group(1)
+            to_include = os.path.join(parent_dir, include_path)
+            # FIXME: This needs to protect against recursive includes.
+            process_file(to_include, depth=depth + 1)
 
 
 def main():
     args = parse_arguments()
-
-    with fileinput.input(files=args.file) as f:
-        for line in f:
-            match = regex.match(line)
-            if not match:
-                raw_print(line)
-                continue
-
-            current_file = fileinput.filename()
-            base_dir = os.path.dirname(current_file)
-            included_path = match.group(1)
-            to_include = os.path.join(base_dir, included_path)
-
-            with open(to_include, "r") as included:
-                raw_print(included.read())
+    process_file(args.file)
 
 
 if __name__ == "__main__":
