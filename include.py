@@ -23,6 +23,14 @@ def parse_arguments() -> argparse.Namespace:
     p.add_argument(
         "file",
         default="-",
+        help="The file to process includes in (default: stdin)",
+    )
+    p.add_argument(
+        "--max-depth",
+        type=int,
+        default=10,
+        metavar="int",
+        help="The maximum allowed include depth before an error is thrown",
     )
     return p.parse_args()
 
@@ -34,8 +42,8 @@ def print_raw(line: object):
 # Even though the fileinput module is meant to handle multiple input sources,
 # it is only being used here for it's easy management of stdin. This method
 # should only ever accept a single file as an argument.
-def process_file(path: str, depth=1):
-    if depth > 10:
+def process_file(path: str, *, max_depth, depth=1):
+    if depth > max_depth:
         raise Exception("Depth limit reached!")
 
     if path in included:
@@ -52,12 +60,12 @@ def process_file(path: str, depth=1):
 
             requested_include = match.group(1)
             include_path = os.path.normpath(os.path.join(parent_dir, requested_include))
-            process_file(include_path, depth=depth + 1)
+            process_file(include_path, max_depth=max_depth, depth=depth + 1)
 
 
 def main():
     args = parse_arguments()
-    process_file(args.file)
+    process_file(args.file, max_depth=args.max_depth)
 
 
 if __name__ == "__main__":
