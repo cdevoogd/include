@@ -22,7 +22,7 @@ filetype: FileType = FileType.UNKNOWN
 # - A line that starts with #include
 # - Has quotes with 1+ characters inside (the include path)
 # - Has 0+ whitespace characters before the line ends
-regex = re.compile(r"^#include \"(.+)\"\s*$")
+include_re = re.compile(r"^#include \"(.+)\"\s*$")
 
 # included stores all files that have already been included. This allows the
 # script to strictly enforce a behavior similar to C's #pragma once directive
@@ -80,7 +80,7 @@ def process_file(path: str, depth=1):
     with FileInput(files=path) as input:
         parent_dir = os.path.dirname(path)
         for line in input:
-            match = regex.match(line)
+            match = include_re.match(line)
             if not match:
                 process_line(line, current_depth=depth)
                 continue
