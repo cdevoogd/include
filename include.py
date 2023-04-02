@@ -1,14 +1,22 @@
 #!/usr/bin/env python3
 
 import argparse
+from enum import Enum
 from fileinput import FileInput
 import os
 import sys
 import re
 
+
+class FileType(Enum):
+    UNKNOWN = 0
+    SHELL = 1
+
+
 # Global script arguments. This will only be populated after the arguments are
 # parsed.
 args: argparse.Namespace
+filetype: FileType = FileType.UNKNOWN
 
 # This regular expression is looking for:
 # - A line that starts with #include
@@ -41,8 +49,16 @@ def parse_arguments():
     global args
     args = p.parse_args()
 
+    global filetype
+    if args.file.endswith(".sh"):
+        filetype = FileType.SHELL
 
-def process_line(line: str):
+
+def process_line(line: str, *, current_depth: int):
+    # If we are adding text to a shell script, don't add additional shebangs
+    if current_depth > 1 and filetype == FileType.SHELL and line.startswith("#!"):
+        return
+
     print(line, end="")
 
 
@@ -66,7 +82,7 @@ def process_file(path: str, depth=1):
         for line in input:
             match = regex.match(line)
             if not match:
-                process_line(line)
+                process_line(line, current_depth=depth)
                 continue
 
             requested_include = match.group(1)
