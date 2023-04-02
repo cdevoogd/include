@@ -3,6 +3,7 @@
 import argparse
 from fileinput import FileInput
 import os
+import sys
 import re
 
 # Global script arguments. This will only be populated after the arguments are
@@ -50,7 +51,11 @@ def process_line(line: str):
 # should only ever accept a single file as an argument.
 def process_file(path: str, depth=1):
     if depth > args.max_depth:
-        raise Exception("Depth limit reached!")
+        print(
+            f"FATAL: Maximum allowed depth of {args.max_depth} reached!",
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
     if path in included:
         return
